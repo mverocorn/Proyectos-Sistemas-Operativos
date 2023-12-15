@@ -1,0 +1,51 @@
+// cliente.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+#define BUFFER_SIZE 256
+#define PORT 4500
+
+int main(int argc, char *argv[]) {
+    int socket_cliente;
+    struct sockaddr_in dir_router;
+    char buffer[BUFFER_SIZE];
+
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <Dirección IP del router>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // Crear socket TCP
+    socket_cliente = socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_cliente < 0) {
+        perror("Error al crear el socket");
+        exit(EXIT_FAILURE);
+    }
+
+    // Configurar dirección del router
+    memset(&dir_router, 0, sizeof(dir_router));
+    dir_router.sin_family = AF_INET;
+    dir_router.sin_addr.s_addr = inet_addr(argv[1]);
+    dir_router.sin_port = htons(PORT);
+
+    // Conectar al router
+    if (connect(socket_cliente, (struct sockaddr *)&dir_router, sizeof(dir_router)) < 0) {
+        perror("Error al conectar con el router");
+        exit(EXIT_FAILURE);
+    }
+
+    // Leer mensaje desde el teclado y enviarlo
+    printf("Ingrese un mensaje: ");
+    fgets(buffer, BUFFER_SIZE, stdin);
+    write(socket_cliente, buffer, strlen(buffer));
+
+    // Recibir respuesta y mostrarla
+    read(socket_cliente, buffer, BUFFER_SIZE);
+    printf("Respuesta del router: %s\n", buffer);
+
+    close(socket_cliente);
+    return 0;
+}
